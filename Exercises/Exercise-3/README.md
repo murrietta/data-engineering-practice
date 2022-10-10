@@ -44,3 +44,10 @@ Extra Credit:
 stream the file.
    
 2. DO NOT download the initial `gz` file onto disk, download, extract, and read it in memory.
+
+#### My Notes - Details on this exercise
+
+Need an AWS account, preferably with an IAM user with appropriate s3 access.
+
+- My solution involved providing appropriate values for `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+- I provided these values in an attached shell session and ran `python main.py` directly
