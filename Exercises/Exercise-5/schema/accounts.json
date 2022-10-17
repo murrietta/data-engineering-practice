@@ -1,0 +1,50 @@
+{
+    "table_name": "accounts",
+    "columns": [
+        {
+            "name": "customer_id",
+            "type": "integer",
+            "constraints": "PRIMARY KEY"
+        },
+        {
+            "name": "first_name",
+            "type": "varchar(50)",
+            "constraints": "NOT NULL"
+        },
+        {
+            "name": "last_name",
+            "type": "varchar(50)",
+            "constraints": "NOT NULL"
+        },
+        {
+            "name": "address_1",
+            "type": "varchar(50)",
+            "constraints": "NOT NULL"
+        },
+        {
+            "name": "address_2",
+            "type": "varchar(50)",
+            "constraints": "NOT NULL"
+        },
+        {
+            "name": "city",
+            "type": "varchar(100)",
+            "constraints": "NOT NULL"
+        },
+        {
+            "name": "state",
+            "type": "varchar(100)",
+            "constraints": "NOT NULL"
+        },
+        {
+            "name": "zip_code",
+            "type": "varchar(20)",
+            "constraints": "NOT NULL"
+        },
+        {
+            "name": "join_date",
+            "type": "date",
+            "constraints": "NOT NULL"
+        }
+    ]
+}

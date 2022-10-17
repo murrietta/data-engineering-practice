@@ -1,0 +1,40 @@
+{
+    "table_name": "transactions",
+    "columns": [
+        {
+            "name": "transaction_id",
+            "type": "varchar(30)",
+            "constraints": "PRIMARY KEY"
+        },
+        {
+            "name": "transaction_date",
+            "type": "date",
+            "constraints": "NOT NULL"
+        },
+        {
+            "name": "product_id",
+            "type": "integer",
+            "constraints": "references products (product_id) NOT NULL"
+        },
+        {
+            "name": "product_code",
+            "type": "varchar(20)",
+            "constraints": "references products (product_code) NOT NULL"
+        },
+        {
+            "name": "product_description",
+            "type": "varchar(20)",
+            "constraints": "references products (product_description) NOT NULL"
+        },
+        {
+            "name": "quantity",
+            "type": "integer",
+            "constraints": "NOT NULL"
+        },
+        {
+            "name": "account_id",
+            "type": "integer",
+            "constraints": "references accounts (customer_id) NOT NULL"
+        }
+    ]
+}

@@ -1,0 +1,20 @@
+{
+    "table_name": "products",
+    "columns": [
+        {
+            "name": "product_id",
+            "type": "integer",
+            "constraints": "PRIMARY KEY"
+        },
+        {
+            "name": "product_code",
+            "type": "varchar(20)",
+            "constraints": "NOT NULL"
+        },
+        {
+            "name": "product_description",
+            "type": "varchar(100)",
+            "constraints": "NOT NULL"
+        }
+    ]
+}
