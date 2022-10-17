@@ -9,12 +9,12 @@
         {
             "name": "product_code",
             "type": "varchar(20)",
-            "constraints": "NOT NULL"
+            "constraints": "UNIQUE NOT NULL"
         },
         {
             "name": "product_description",
             "type": "varchar(100)",
-            "constraints": "NOT NULL"
+            "constraints": "UNIQUE NOT NULL"
         }
     ]
 }
