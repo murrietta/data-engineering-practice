@@ -31,7 +31,7 @@ def make_table(table_config, conn):
     columns_text = ',\n'.join(columns_text)
 
     # create DDL
-    sql = f'''DROP TABLE IF EXISTS {table_name};
+    sql = f'''DROP TABLE IF EXISTS {table_name} CASCADE;
         CREATE TABLE {table_name}(
         {columns_text}{table_constraints}
         );'''
@@ -76,17 +76,35 @@ def main():
         
         # strip any leading/trailing whitespaces
         rows = [[y.strip() for y in x] for x in rows]
-        # print('\n'.join([','.join(x) for x in rows]))
-
-        # parse into appropriate data types based on corresponding schema
-        schema_file = [x for x in schema_files if data_file.replace(data_folder, '').replace('.csv', '') in x]
-        schema_file = schema_file[0]
-        with open(schema_file, 'r') as f:
-            schema = json.loads(f.read())
-
 
         # compose insert statement
+        # assuming file name corresponds to table and column names are equal to file
+        columns = rows[0]  # colum
+        rows = rows[1:]  # omit header row
+        
+        table = data_file.replace(data_folder, '').replace('.csv', '')
+        col_string = ', '.join(columns)
+        s_string = ', '.join(['%s' for x in rows[0]])  # string for insert
+        sql = f'INSERT INTO {table}({col_string}) VALUES({s_string});'
+        logger.info(f'Inserting into {table}')
+        logger.debug(f'sql:\n{sql}')
+        logger.debug(f'values: {rows}')
+        try:
+            with conn.cursor() as cur:
+                cur.executemany(sql, rows)
+                conn.commit()
+        except Exception as e:
+            logger.error('Error encountered during insert')
+            raise(e)
 
+        # select from the table to see what was inserted
+        logger.debug('Selecting from table to confirm successful write...')
+        with conn.cursor() as cur:
+            sql = f'select * from {table};'
+            cur.execute(sql)
+            ret = cur.fetchall()
+            logger.debug(f'{sql}\nOutput:\n')
+            logger.debug(f'{ret}\n')
 
 
 if __name__ == '__main__':
