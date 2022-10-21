@@ -1,10 +1,18 @@
+from pyspark.sql import SparkSession
+from pyspark.sql.types import IntegerType, BooleanType, DateType, DoubleType, TimestampType, DateType
+from pyspark.sql.window import Window
+from pyspark.sql.functions import row_number, col, count, date_trunc, trunc, weekofyear
 import sys, os
 sys.stdout = open(sys.stdout.fileno(), mode='w', encoding='utf8', buffering=1)
 import glob
-from pyspark.sql import SparkSession
-from pyspark.sql.types import DateType
-from pyspark.sql.window import Window
-from pyspark.sql.functions import row_number, col, count, date_trunc, trunc, weekofyear, mean, lit
+import csv
+import zipfile
+import logging
+# log_format = '%(asctime)s %(levelname)s %(name)s %(message)s'
+# log_kwargs = {'level': logging.INFO, 'filemode': 'w',
+#                 'format': log_format, 'force': True}
+# logging.basicConfig(**log_kwargs)
+logger = logging.getLogger(__name__)
 
 data_folder = './data/'
 output_folder = './reports/'
@@ -59,10 +67,6 @@ def analyze_q4(sdf, verbose=False, foldername='q04_top_3_stations_last_2_weeks',
     #   - compute weekofyear for each end_time (since using destination this time)
     #   - extract the max week in the data, then filter df for last two weeks
     #   - group by trip station (destination), count, sort descending by count and select top 3
-    #   - we are assuming all data here is in the same year (it is)
-    #       - if not true then need to map each date to its week (maybe most recent Sunday)
-    #       - order by that week date, descending, take the last two weeks only
-    #       - OR, just add year column with the weekofyear column and sort by using both columns
     if verbose: print('Top 3 stations last 2 weeks')
     outdf = sdf.withColumn('end_date', col('end_time').cast(DateType())) \
             .withColumn('end_week', weekofyear('end_date'))
@@ -92,25 +96,13 @@ def analyze_q5(sdf, verbose=False, foldername='q05_gender_avg_trip_dur', write_c
 
 def analyze_q6(sdf, verbose=False, foldername='q06_top_10_ages_shortest_longest_trips', write_csv=True):
     # What is the top 10 ages of those that take the longest trips, and shortest?
-    # plan - question isn't obvious to me
-    #   - compute age column
-    #   - group by age, average tripduration
-    #   - order by trip duration (asc/desc) get top 10 for each
-    #   - concatenate both dfs and output to csv with column indicating if it was long/short
-    if verbose: print('Top 10 ages of longest/shortest trip takers')
-    predf = sdf.withColumn('age', 2022 - col('birthyear')) \
-            .withColumn("tripduration", sdf.tripduration.cast('double')) \
-            .groupBy('age') \
-            .agg(mean('tripduration').alias('avg_tripduration'))
-    outdf = predf.orderBy(col('avg_tripduration').asc()) \
-            .withColumn("row_number", row_number().over(Window.partitionBy().orderBy(col('avg_tripduration').asc()))) \
-            .where(col('row_number') <= 10) \
-            .withColumn('type', lit('shortest_trips'))
-    outdf2 = predf.orderBy(col('avg_tripduration').desc()) \
-            .withColumn("row_number", row_number().over(Window.partitionBy().orderBy(col('avg_tripduration').desc()))) \
-            .where(col('row_number') <= 10) \
-            .withColumn('type', lit('longest_trips'))
-    outdf = outdf.union(outdf2)
+    # plan
+    #   - group by gender, avg trip_duration
+    #   - return whole table (2x2)
+    if verbose: print('Average trip duration by gender')
+    outdf = sdf.withColumn("tripduration", sdf.tripduration.cast('double')) \
+            .groupBy('gender') \
+            .mean('tripduration')
 
     if verbose: print(outdf.show())
     if write_csv: write_df_to_csv(outdf, output_folder, foldername)
@@ -118,6 +110,7 @@ def analyze_q6(sdf, verbose=False, foldername='q06_top_10_ages_shortest_longest_
 def main():
     spark = SparkSession.builder.appName('Exercise6') \
         .enableHiveSupport().getOrCreate()
+    sc = spark.sparkContext
     
     # find zipped files - assuming all contain csv
     print('Finding all zipped csv files')
@@ -129,6 +122,7 @@ def main():
         print(f'Trying to read file {data_file}')
         dfs[data_file] = spark.read.options(header="true", inferSchema="true").format('csv').load(data_file)
         print(f'Dataframe count: {dfs[data_file].count()}')
+        # print(dfs[data_file].show(20))
 
     # data_files[0] contains the trip-level data, data_files[1] contains ride-level data
     # continue analytics using data_files[0]
@@ -136,22 +130,68 @@ def main():
     print(df.show(20))
 
     # Q1
-    analyze_q1(df, verbose=True)
+    # analyze_q1(df, verbose=True)
     
     # Q2
-    analyze_q2(df, verbose=True)
+    # analyze_q2(df, verbose=True)
     
     # Q3
-    analyze_q3(df, verbose=True)
+    # analyze_q3(df, verbose=True)
     
     # Q4
-    analyze_q4(df, verbose=True)
+    # analyze_q4(df, verbose=True)
 
     # Q5
-    analyze_q5(df, verbose=True)
+    # analyze_q5(df, verbose=True)
 
     # Q6
     analyze_q6(df, verbose=True)
+
+    # ==============================================================================
+    # OLD STUFF - trying to read it from compressed format wasn't working...
+    # ==============================================================================
+    try_various = False
+    if try_various:
+        try:
+
+            try_open_zip_to_rdd = False
+            if try_open_zip_to_rdd:
+                print('trying to open zip file and load to rdd')
+                with zipfile.ZipFile(data_file, 'r') as z:
+                    for file in z.namelist():
+                        rdd = sc.textFile(z.open(file)) \
+                            .map(lambda line: line.split(','))
+                print(rdd.take(5))
+
+            try_rdd = False
+            if try_rdd:
+                print('Trying to read into rdd')
+                rddFromFile = sc.textFile(f'{data_folder}*.zip').map(lambda line: line.split(','))
+                # rdd = rddFromFile \
+                #     .map(lambda line: line.split(",")) \
+                #     .filter(lambda line: len(line)>1) \
+                #     .map(lambda line: (line[0],line[1])) \
+                #     .collect()
+                print(type(rddFromFile))
+                print(f'One Row: {rddFromFile.first()}')
+                # rdd = rddFromFile.map(lambda x: x)
+                # rddFromFile = rddFromFile.mapPartitions(lambda x: csv.reader(x))
+
+            # this works with data as actual csv
+            try_read_csv = True
+            if try_read_csv:
+                print(f'Trying to read file {data_file}')
+                df = spark.read.options(header="true", inferSchema="true").format('csv').load(data_file)
+                df.show(5)
+
+            try_read_csv_all = False
+            if try_read_csv_all:
+                print(f'Trying to read file all files')
+                df = spark.read.options(header="true", inferSchema="true", format='csv').load(data_folder)
+                df.show(5)
+        except Exception as e:
+            print(f'Failed to read from zip\n{e}')
+
 
 
 if __name__ == '__main__':
