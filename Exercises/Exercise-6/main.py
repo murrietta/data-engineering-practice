@@ -29,8 +29,7 @@ def analyze_q2(sdf, verbose=False, foldername='q02_count_trips_by_day', write_cs
     # Q2, average trip duration by day (not clear if its DOW or calendar day so going with calendar day)
     if verbose: print('Trip Counts by Day')
     outdf = sdf.withColumn('start_day', col('start_time').cast(DateType())) \
-            .withColumn('trip_day', date_trunc("start_day", "dd")) \
-            .groupBy('trip_day') \
+            .groupBy('start_day') \
             .agg(count('start_time').alias('trip_count'))
     if verbose: print(outdf.show())
     if write_csv: write_df_to_csv(outdf, output_folder, foldername)

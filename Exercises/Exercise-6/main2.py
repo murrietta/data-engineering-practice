@@ -114,7 +114,7 @@ def main():
     
     # find zipped files - assuming all contain csv
     print('Finding all zipped csv files')
-    data_files = glob.glob(f'{data_folder}**/*.csv', recursive=True)
+    data_files = glob.glob(f'{data_folder}**/*.zip', recursive=True)
 
     # loop over csv files, add to spark dataframe
     dfs = {}
@@ -145,12 +145,12 @@ def main():
     # analyze_q5(df, verbose=True)
 
     # Q6
-    analyze_q6(df, verbose=True)
+    # analyze_q6(df, verbose=True)
 
     # ==============================================================================
     # OLD STUFF - trying to read it from compressed format wasn't working...
     # ==============================================================================
-    try_various = False
+    try_various = True
     if try_various:
         try:
 

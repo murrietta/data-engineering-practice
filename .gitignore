@@ -1,3 +1,7 @@
 *.idea*
 *.DS_Store*
 *postgres-data*
+data2/
+reports/
+Exercises/Exercise-6/data/Divvy_Trips_2019_Q4.csv
+Exercises/Exercise-6/data/Divvy_Trips_2020_Q1.csv
